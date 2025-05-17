@@ -247,10 +247,6 @@ class Game{
         };
         localStorage.setItem("othello_board", JSON.stringify(data));
     }
-
-    loadBoardState() {
-        
-    }
 }
 
 let game = new Game();

@@ -44,7 +44,7 @@ class Board{
         this.tile[y][x] = turn;
     }
 
-    reverceTile(tx,ty,turn){
+    reverseTile(tx,ty,turn){
         let tiles = this.getFlipable(tx,ty,turn);
         
         if(tiles.length == 0) throw new Cancel("ひっくり返せる石がありません");
@@ -174,7 +174,7 @@ class Game{
             let [x,y] = this.board.coordToTile(event.offsetX, event.offsetY);
             if(this.board.tile[y][x] !== 0) throw new Cancel("そのマスは埋まっています")
             //クリックした場所にひっくり返せる石があるか判別してひっくり返す
-            this.board.reverceTile(x,y,this.turn);
+            this.board.reverseTile(x,y,this.turn);
             //押した場所に石を置く
             this.board.setTile(x,y,this.turn);
         }

@@ -14,7 +14,7 @@ class Cancel extends Error{}
 //盤面の状態を管理するクラス
 class BoardState{
     constructor(){
-        this.num = 8;
+        this.Num = 8;
         this.tile = [];
 
         this.init();
@@ -30,12 +30,12 @@ class BoardState{
         return this.get[y][x] === 0
     }
     IsInside(x,y){
-        return x >= 0 && x < this.num && y >= 0 && y < this.num;
+        return x >= 0 && x < this.Num && y >= 0 && y < this.Num;
     }
 
     init(){
-        for(let i=0; i<this.num; i++){
-            this.tile.push(new Array(this.num).fill(0));
+        for(let i=0; i<this.Num; i++){
+            this.tile.push(new Array(this.Num).fill(0));
         }
 
         this.Set(4,4,2);
@@ -50,8 +50,8 @@ class BoardMove{
         this.board = boardState;
     }
 
-    reverceTile(tx,ty,turn){
-        let tiles = this.getFlipable(tx,ty,turn);
+    reverseTile(tx,ty,turn){
+        let tiles = this.getFlippable(tx,ty,turn);
         
         if(tiles.length == 0) throw new Cancel("ひっくり返せる石がありません");
         
@@ -60,7 +60,7 @@ class BoardMove{
         }
     }
 
-    getFlipable(tx,ty,turn){
+    getFlippable(tx,ty,turn){
         let tiles = [];
         const directions = [
             [-1, -1], [0, -1], [1, -1],
@@ -97,18 +97,18 @@ class BoardMove{
     }
 }
 
-class CorrdinateConverter{
+class CoordinateConverter{
     constructor(){
         this.Size = 30;
         this.Offset = 100;
     }
-    CorrdToTile(cx, cy){
+    CoordToTile(cx, cy){
         return [
             Math.floor((cx - this.offset) / this.size),
             Math.floor((cy - this.offset) / this.size)
         ];
     }
-    TileToCorrd(tx, ty){
+    TileToCoord(tx, ty){
         return [
             this.Offset + this.Size * tx,
             this.Offset + this.Size * ty
@@ -116,94 +116,11 @@ class CorrdinateConverter{
     };
 }
 
-
-class Board{
-    constructor(){
-        this.num = 8;
-        this.size = 30;
-        this.offset = 100;
-
-        this.tile = [
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,1,2,0,0,0],
-            [0,0,0,2,1,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0]
-        ];
-    }
-
-    coordToTile(coordX,coordY){
-        let x = Math.floor((coordX - this.offset) / this.size);
-        let y = Math.floor((coordY - this.offset) / this.size);
-
-        if(!this.isTileContain(x,y)) throw new Cancel("フィールド外です");
-
-        return [x,y];
-    }
-   
-    setTile(x,y,turn){
-        if(this.tile[y][x] !== 0) throw new Cancel("そのマスは埋まっています");
-        this.tile[y][x] = turn;
-    }
-
-    reverceTile(tx,ty,turn){
-        let tiles = this.getFlipable(tx,ty,turn);
-        
-        if(tiles.length == 0) throw new Cancel("ひっくり返せる石がありません");
-        
-        for(let [x,y] of tiles){
-            this.tile[y][x] = turn;
-        }
-    }
-
-    getFlipable(tx,ty,turn){
-        let tiles = [];
-        const directions = [
-            [-1, -1], [0, -1], [1, -1],
-            [-1,  0],          [1,  0],
-            [-1,  1], [0,  1], [1,  1]
-        ];
-
-        for(let [x,y] of directions){
-            tiles.push(...this.throwRay(tx,ty,x,y,turn));
-        }
-
-        return tiles;
-    }
-
-    throwRay(x,y,dx,dy,turn){
-        let tiles=[];
-
-        x += dx;
-        y += dy;
-
-        while(this.isTileContain(x,y)){
-            if(this.tile[y][x] == 0) break;
-            if(this.tile[y][x] == turn){
-                return tiles;
-            }
-
-            tiles.push([x,y]);
-
-            x += dx;
-            y += dy;
-        }
-
-        return [];
-    }
-
-    isTileContain(x,y){
-        return x >= 0 && x < this.num && y >= 0 && y < this.num;
-    }
-}
-
 //盤面の描画処理だけ外に分けた
 class BoardRender{
-    constructor(board){
+    constructor(board, converter){
         this.board = board;
+        this.converter = converter;
     }
 
     draw() {
@@ -215,24 +132,25 @@ class BoardRender{
         }
     }
 
-    drawBoard(x, y) {
+   drawBoard(x, y) {
         ctx.fillStyle = "green";
-        const px = this.board.offset + x*this.board.size;
-        const py = this.board.offset + y*this.board.size;
-        ctx.fillRect(px, py, this.board.size, this.board.size);
-        ctx.strokeRect(px, py, this.board.size, this.board.size);
+        const [x,y] = this.converter.TileToCoord(x, y);
+        ctx.fillRect(x,y,this.converter.Size,this.converter.Size);
+        ctx.strokeRect(x,y,this.converter.Size,this.converter.Size);
     }
 
     drawDisk(x, y){
-        const disk = this.board.tile[y][x];
+        const disk = this.board.get(x,y);
         if(disk === 0) return;
+
+        const [x,y] = this.converter.TileToCoord(x, y);
 
         ctx.beginPath();
         ctx.fillStyle = (disk === 1)? "black" : "white";
         ctx.arc(
-            this.board.offset + this.board.size/2 + x*this.board.size, 
-            this.board.offset + this.board.size/2 + y*this.board.size, 
-            this.board.size/2, 
+            x + this.converter.size/2,
+            y + this.converter.size/2, 
+            this.converter.size/2, 
             0, 2*Math.PI);
         ctx.fill();
     }
@@ -260,8 +178,10 @@ class Button{
 class Game{
     constructor(){
         this.turn = 1;
-        this.board = new Board();
-        this.render = new BoardRender(this.board);
+        this.board = new BoardState();
+        this.converter = new CoordinateConverter();
+        this.boardMove = new BoardMove(this.board);
+        this.render = new BoardRender(this.board,this.converter);
         this.passBtn = new Button(375,150,100,30,() => this.switchTurn());
 
         this.init();
@@ -279,7 +199,7 @@ class Game{
             let [x,y] = this.board.coordToTile(event.offsetX, event.offsetY);
             if(this.board.tile[y][x] !== 0) throw new Cancel("そのマスは埋まっています")
             //クリックした場所にひっくり返せる石があるか判別してひっくり返す
-            this.board.reverceTile(x,y,this.turn);
+            this.board.reverseTile(x,y,this.turn);
             //押した場所に石を置く
             this.board.setTile(x,y,this.turn);
         }

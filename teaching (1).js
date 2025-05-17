@@ -13,10 +13,10 @@ class Cancel extends Error{}
 
 //盤面の状態を管理するクラス
 class BoardState{
-    constructor(num = 8, size = 30, offset = 100){
-        this.Num = num;
+    constructor(size = 30, offset = 100, num = 8){
         this.Size = size;
         this.Offset = offset;
+        this.Num = num;
         this.tile = [];
 
         this.init();

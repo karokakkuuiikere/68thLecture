@@ -12,24 +12,24 @@ UI、パス、勝利判定は未実装
 class Cancel extends Error{}
 
 //盤面の状態を管理するクラス
-class BoardState{
-    constructor(size = 30, offset = 100, num = 8){
+class OthelloState{
+    constructor(board = [], size = 30, offset = 100, num = 8){
         this.Size = size;
         this.Offset = offset;
         this.Num = num;
-        this.tile = [];
+        this.board = board;
 
-        this.init();
+        if(this.board.length == 0) this.init();
     }
     //指定マスの状態を取得
     Get(x,y){
-        return this.tile[y][x];
+        return this.board[y][x];
     }
     //指定マスの状態を変更
     //0:空きマス、1:黒、2:白
     Set(x,y,value){
         if (![0, 1, 2].includes(value)) throw new Error("不正な値です");
-        this.tile[y][x] = value;
+        this.board[y][x] = value;
     }
     //指定マスが空いているか
     IsEmpty(x,y){
@@ -57,7 +57,7 @@ class BoardState{
     //盤面の初期化
     init(){
         for(let i=0; i<this.Num; i++){
-            this.tile.push(new Array(this.Num).fill(0));
+            this.board.push(new Array(this.Num).fill(0));
         }
 
         this.Set(3,3,2);
@@ -67,12 +67,13 @@ class BoardState{
     }
 }
 
-class BoardLogic{
-    constructor(boardState){
-        this.turn = 1;
+class OthelloLogic{
+    constructor(boardState, turn = 1){
+        this.turn = turn;
         this.board = boardState;
     }
 
+    //ちょっと処理長いから分けたい
     GameLogic(cx,cy){
         const [tx,ty] = this.board.CoordToTile(cx, cy);
 
@@ -149,7 +150,7 @@ class BoardLogic{
 }
 
 //盤面の描画処理だけ外に分けた
-class BoardRender{
+class OthelloRender{
     constructor(board){
         this.board = board;
     }
@@ -208,17 +209,25 @@ class Button{
 //ゲーム全体の状態を管理するクラス
 class Game{
     constructor(){
-        this.board = new BoardState();
-        this.boardLogic = new BoardLogic(this.board);
-        this.boardRender = new BoardRender(this.board);
-        this.passBtn = new Button(375,150,100,30,() => this.switchTurn());
+        //二重でundefined渡すの無駄だなあ
+        let data = JSON.parse(localStorage.getItem("othello_board"));
+        if(!data) data = {turn: undefined, tile: undefined};
 
-        this.init();
+        this.init(data.turn, data.tile);
+
+        this.passBtn = new Button(375,150,100,30,() => this.boardLogic.switchTurn());
+        this.initBtn = new Button(375,200,100,30,() => this.init());
+        this.passBtn.draw();
+        this.initBtn.draw();
     }
 
-    init(){
+    init(turn = undefined, tile = undefined){
+        this.board = new OthelloState(tile);
+        this.boardLogic = new OthelloLogic(this.board, turn);
+        this.boardRender = new OthelloRender(this.board);
+
         this.boardRender.draw();
-        this.passBtn.draw();
+        this.saveGameState();
     }
 
     onClick(event){
@@ -226,6 +235,21 @@ class Game{
         this.boardRender.draw();
 
         this.passBtn.onClick(event.offsetX, event.offsetY);
+        this.initBtn.onClick(event.offsetX, event.offsetY);
+
+        this.saveGameState();
+    }
+
+    saveGameState(){
+        const data = {
+            turn: this.boardLogic.turn,
+            tile: this.board.board
+        };
+        localStorage.setItem("othello_board", JSON.stringify(data));
+    }
+
+    loadBoardState() {
+        
     }
 }
 

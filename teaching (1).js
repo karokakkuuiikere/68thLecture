@@ -11,10 +11,18 @@ UI、パス、勝利判定は未実装
 //クリックした場所に石が置けないときにキャンセルするもの
 class Cancel extends Error{}
 
+class BoardConfig{
+    constructor(num = 8, size = 30, offset = 100){
+        this.Num = num;
+        this.Size = size;
+        this.Offset = offset;
+    }
+}
+
 //盤面の状態を管理するクラス
 class BoardState{
-    constructor(){
-        this.Num = 8;
+    constructor(num){
+        this.Num = num;
         this.tile = [];
 
         this.init();
@@ -98,9 +106,9 @@ class BoardMove{
 }
 
 class CoordinateConverter{
-    constructor(){
-        this.Size = 30;
-        this.Offset = 100;
+    constructor(size, offset){
+        this.Size = size;
+        this.Offset = offset;
     }
     CoordToTile(cx, cy){
         return [
@@ -118,7 +126,8 @@ class CoordinateConverter{
 
 //盤面の描画処理だけ外に分けた
 class BoardRender{
-    constructor(board, converter){
+    constructor(board, converter, size){
+        this.size = size;
         this.board = board;
         this.converter = converter;
     }
@@ -135,8 +144,8 @@ class BoardRender{
    drawBoard(tx, ty) {
         ctx.fillStyle = "green";
         const [cx,cy] = this.converter.TileToCoord(tx, ty);
-        ctx.fillRect(cx,cy,this.converter.Size,this.converter.Size);
-        ctx.strokeRect(cx,cy,this.converter.Size,this.converter.Size);
+        ctx.fillRect(cx,cy,this.size,this.size);
+        ctx.strokeRect(cx,cy,this.size,this.size);
     }
 
     drawDisk(tx, ty){
@@ -148,9 +157,9 @@ class BoardRender{
         ctx.beginPath();
         ctx.fillStyle = (disk === 1)? "black" : "white";
         ctx.arc(
-            cx + this.converter.Size/2,
-            cy + this.converter.Size/2, 
-            this.converter.Size/2, 
+            cx + this.size/2,
+            cy + this.size/2, 
+            this.size/2, 
             0, 2*Math.PI);
         ctx.fill();
     }
@@ -178,10 +187,12 @@ class Button{
 class Game{
     constructor(){
         this.turn = 1;
-        this.board = new BoardState();
-        this.converter = new CoordinateConverter();
+        this.config = new BoardConfig();
+
+        this.board = new BoardState(this.config.Num);
+        this.converter = new CoordinateConverter(this.config.Size, this.config.Offset);
         this.boardMove = new BoardMove(this.board);
-        this.render = new BoardRender(this.board,this.converter);
+        this.render = new BoardRender(this.board, this.converter, this.config.Size);
         this.passBtn = new Button(375,150,100,30,() => this.switchTurn());
 
         this.init();

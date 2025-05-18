@@ -3,7 +3,7 @@ let ctx = canvas.getContext("2d");
 
 /*
 JavaScriptのオセロゲーム
-UI、パス、勝利判定は未実装
+UI、勝利判定は未実装
 大体の処理はGame.onClickに固まってるのでそこ見て
 */
 

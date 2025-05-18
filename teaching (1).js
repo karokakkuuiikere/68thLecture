@@ -19,7 +19,8 @@ class OthelloState{
         this.Num = num;
         this.board = board;
 
-        if(this.board.length == 0) this.init();
+        //初期化処理はGameクラスでやってもいいかも
+        if(this.board.length == 0) this.boardInit();
     }
     //指定マスの状態を取得
     Get(x,y){
@@ -55,7 +56,7 @@ class OthelloState{
     };
 
     //盤面の初期化
-    init(){
+    boardInit(){
         for(let i=0; i<this.Num; i++){
             this.board.push(new Array(this.Num).fill(0));
         }
@@ -74,9 +75,10 @@ class OthelloLogic{
     }
 
     //ちょっと処理長いから分けたい
-    GameLogic(cx,cy){
+    OnClick(cx,cy){
         const [tx,ty] = this.board.CoordToTile(cx, cy);
-
+        let tiles = [];
+        //そもそもエラー使わなきゃいいんじゃないか？console.logで足りてるでしょ
         try
         {
             //例外は早期リターン
@@ -84,14 +86,8 @@ class OthelloLogic{
             if(!this.board.IsEmpty(tx,ty)) throw new Cancel("そのマスは埋まっています");
 
             //範囲内の時にだけ置ける石があるか判定
-            const tiles = this.getFlippable(tx,ty);
+            tiles = this.getFlippable(tx,ty);
             if(tiles.length == 0) throw new Cancel("ひっくり返せる石がありません");
-
-            //盤面に適用
-            this.board.Set(tx,ty,this.turn);
-            for(let [x,y] of tiles){
-                this.board.Set(x, y, this.turn);
-            }
         }
         catch(e)
         {
@@ -101,6 +97,12 @@ class OthelloLogic{
             }else{
                 throw e;
             }
+        }
+
+        //盤面に適用
+        this.board.Set(tx,ty,this.turn);
+        for(let [x,y] of tiles){
+            this.board.Set(x, y, this.turn);
         }
 
         //手番の入れ換え
@@ -143,7 +145,7 @@ class OthelloLogic{
         return [];
     }
 
-
+    //ターン交換ボタン作るときこっから参照しちゃったけどゲーム全体の管理ならGameクラスのが良いんじゃ？
     switchTurn(){
         this.turn = (this.turn == 1)? 2:1;
     }
@@ -188,6 +190,7 @@ class OthelloRender{
     }
 }
 
+//むしろタイルのマスもボタンとした方が管理しやすいのか？
 class Button{
     constructor(x,y,w,h,event){
         this.x = x;
@@ -201,7 +204,8 @@ class Button{
         ctx.strokeRect(this.x,this.y,this.w,this.h);
     }
     onClick(x,y){
-        if(!(x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h)) return;
+        if(!(x >= this.x && x <= this.x + this.w &&
+             y >= this.y && y <= this.y + this.h)) return;
         this.e();
     }
 }
@@ -210,14 +214,15 @@ class Button{
 class Game{
     constructor(){
         //二重でundefined渡すの無駄だなあ
+        //あとローカルストレージ以外も対応できるようメソッド分離したい
         let data = JSON.parse(localStorage.getItem("othello_board"));
         if(!data) data = {turn: undefined, tile: undefined};
 
         this.init(data.turn, data.tile);
 
         this.passBtn = new Button(375,150,100,30,() => this.boardLogic.switchTurn());
-        this.initBtn = new Button(375,200,100,30,() => this.init());
         this.passBtn.draw();
+        this.initBtn = new Button(375,200,100,30,() => this.init());
         this.initBtn.draw();
     }
 
@@ -231,7 +236,7 @@ class Game{
     }
 
     onClick(event){
-        this.boardLogic.GameLogic(event.offsetX, event.offsetY);
+        this.boardLogic.OnClick(event.offsetX, event.offsetY);
         this.boardRender.draw();
 
         this.passBtn.onClick(event.offsetX, event.offsetY);

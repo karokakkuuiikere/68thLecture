@@ -216,7 +216,7 @@ class Game{
         //二重でundefined渡すの無駄だなあ
         //あとローカルストレージ以外も対応できるようメソッド分離したい
         let data = JSON.parse(localStorage.getItem("othello_board"));
-        if(!data) data = {turn: undefined, tile: undefined};
+        if(!data) data = {turn: 1, tile: []};
 
         this.init(data.turn, data.tile);
 
@@ -226,7 +226,7 @@ class Game{
         this.initBtn.draw();
     }
 
-    init(turn = undefined, tile = undefined){
+    init(turn = 1, tile = []){
         this.board = new OthelloState(tile);
         this.boardLogic = new OthelloLogic(this.board, turn);
         this.boardRender = new OthelloRender(this.board);
